@@ -173,7 +173,12 @@ After showing code, ask briefly:
 - "换成 Compose 版本" → regenerate in different format
 - "颜色不对，这里应该是 #333333" → fix specific values
 
-Continue iterating until the user is satisfied. Each round only regenerates the changed parts, not the entire file (unless the user asks for full regeneration).
+Continue iterating until the user is satisfied.
+
+**Iteration output rule:**
+- If the file has already been written to disk → read the current file, apply only the minimal patch, output just the changed lines with clear context (file path + line range). Do NOT regenerate the whole file.
+- If the code only exists in the conversation (not written to disk) → output only the changed snippet with a comment indicating where it replaces (e.g., `// replaces lines 12-18 in activity_main.xml`). Do NOT repeat the entire file.
+- Only regenerate the full file if the user explicitly asks (e.g., "重新生成完整文件", "show me the full file").
 
 **⚠️ IMPORTANT: Every time the user corrects your output (layout issue, wrong component, spacing problem, etc.), you MUST log it to `feedback-log.md` before proceeding with the fix. Do not skip this step — the log is how the skill learns and improves over time.**
 
