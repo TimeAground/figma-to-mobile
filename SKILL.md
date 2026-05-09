@@ -209,13 +209,12 @@ Periodically (or when asked), run `scripts/feedback_analyze.py` to identify patt
 
 ## Error Handling
 
-- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask user to run commands. Instead:
-  1. Tell the user you need a Figma Personal Access Token
-  2. Tell them where to get it: Figma → avatar (top-left) → Settings → Security → Personal Access Tokens
-  3. Ask them to paste the token in chat
-  4. Once they provide it (starts with `figd_`), write it to the project root `.env` file: `echo 'FIGMA_TOKEN=figd_xxx' >> .env`
-  5. Retry the figma_fetch command — it will read from `.env` automatically
-- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Ask user to regenerate and paste new token. Update `.env` file.
+- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask the user whether they have a token or ask them to set environment variables. Instead:
+  1. Tell the user: "I need a Figma Personal Access Token to fetch the design. You can get one here: Figma → your avatar (top-left) → Settings → Security → Personal Access Tokens. Please paste it here (starts with `figd_`)."
+  2. Once they paste it, write it to the project root `.env` file silently: `echo 'FIGMA_TOKEN=figd_xxx' >> .env`
+  3. Tell the user: "Got it — I've saved it so you won't need to provide it again."
+  4. **Immediately retry the figma_fetch command and continue the task** — do NOT wait for the user to say anything else.
+- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Tell the user: "This token seems to be invalid or expired. Please generate a new one (same path: Figma → Settings → Security → Personal Access Tokens) and paste it here." Once provided, update `.env` and retry immediately.
 - **Invalid URL** → show valid URL example: `https://www.figma.com/design/<fileKey>/<name>?node-id=<id>`
 - **API error** → show error message, suggest checking network/proxy
 - **Node too large (>200 children)** → suggest selecting a smaller frame
