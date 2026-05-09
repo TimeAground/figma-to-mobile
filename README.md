@@ -39,14 +39,7 @@ Paste a Figma design link → get idiomatic mobile UI code that reuses your proj
 
 ## 🚀 Quick Start
 
-### 1. Setup Figma Token
-
-```bash
-# Get token: Figma → Settings → Security → Personal Access Tokens
-export FIGMA_TOKEN="figd_your_token_here"
-```
-
-### 2. Install
+### 1. Install
 
 Works with any AI coding assistant that supports agent skills:
 
@@ -61,7 +54,7 @@ cp -r figma-to-mobile/ your-project/.claude/skills/
 cp -r figma-to-mobile/ your-project/.agents/skills/
 ```
 
-### 3. Use
+### 2. Use
 
 ```
 Convert this to Jetpack Compose:
@@ -73,6 +66,8 @@ The AI agent will:
 2. Scan your project's existing resources
 3. Ask clarifying questions if needed
 4. Generate production-ready code files that reference your existing colors, strings, and components
+
+> **Figma Token** — Required on first use. If `FIGMA_TOKEN` is not set, the agent will prompt you to paste your token (Figma → Settings → Security → Personal Access Tokens) and save it to `.env` automatically.
 
 ## Supported Platforms
 

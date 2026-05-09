@@ -71,14 +71,7 @@
 
 ## 快速开始
 
-### 第一步：配置 Figma Token
-
-```bash
-# 获取路径：Figma → 设置 → 安全 → 个人访问令牌
-export FIGMA_TOKEN="figd_your_token_here"
-```
-
-### 第二步：安装
+### 第一步：安装
 
 ```bash
 # OpenClaw 一键安装
@@ -91,7 +84,7 @@ cp -r figma-to-mobile/ your-project/.claude/skills/
 cp -r figma-to-mobile/ your-project/.agents/skills/
 ```
 
-### 第三步：使用
+### 第二步：使用
 
 在 AI 助手中输入：
 ```
@@ -100,6 +93,8 @@ https://www.figma.com/design/xxx/Project?node-id=100-200
 ```
 
 AI Agent 会依次：拉取设计树 → 扫描项目资源 → 必要时提问 → 生成引用已有资源的完整代码文件。
+
+> **Figma Token** — 首次使用时需要。如果未设置 `FIGMA_TOKEN`，Agent 会引导你粘贴 Token（Figma → 设置 → 安全 → 个人访问令牌），并自动写入项目根目录的 `.env` 文件，无需手动配置。
 
 ---
 
