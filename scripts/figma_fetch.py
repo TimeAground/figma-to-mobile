@@ -510,20 +510,8 @@ def export_svgs(file_key: str, node_ids: list, token: str) -> dict:
 
 
 def _load_token() -> str | None:
-    """Load FIGMA_TOKEN from env or .env file."""
-    token = os.environ.get("FIGMA_TOKEN")
-    if not token:
-        for env_path in [".env", "../.env"]:
-            if os.path.exists(env_path):
-                with open(env_path) as ef:
-                    for line in ef:
-                        line = line.strip()
-                        if line.startswith("FIGMA_TOKEN="):
-                            token = line.split("=", 1)[1].strip().strip('"').strip("'")
-                            break
-            if token:
-                break
-    return token
+    """Load FIGMA_TOKEN from environment variable only."""
+    return os.environ.get("FIGMA_TOKEN")
 
 
 def _require_token() -> str:
@@ -532,13 +520,16 @@ def _require_token() -> str:
     if not token:
         print("FIGMA_TOKEN_NOT_SET")
         print("")
-        print("To configure: ask the user for their Figma Personal Access Token,")
-        print("then write it to the project root .env file:")
+        print("To use this skill, set the FIGMA_TOKEN environment variable.")
         print("")
-        print("  echo 'FIGMA_TOKEN=figd_xxx' >> .env")
+        print("  Windows (persist for new terminals):")
+        print('    setx FIGMA_TOKEN "figd_xxx"')
         print("")
-        print("The token starts with 'figd_'. The user can get one at:")
-        print("  Figma > avatar (top-left) > Settings > Security > Personal Access Tokens")
+        print("  macOS/Linux (add to ~/.zshrc or ~/.bashrc):")
+        print('    export FIGMA_TOKEN="figd_xxx"')
+        print("")
+        print("Get your token at: Figma > avatar > Settings > Security > Personal Access Tokens")
+        print("The token starts with 'figd_'.")
         sys.exit(1)
     return token
 

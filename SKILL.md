@@ -6,6 +6,7 @@ description: >
   Use when a user provides a Figma link and wants mobile layout code.
   Extracts design tokens via Figma REST API, asks clarifying questions,
   then generates production-ready code files.
+  Optionally inspects local project resources for accurate color/string matching.
 metadata:
   {
     "openclaw":
@@ -136,15 +137,24 @@ If the design has ≤10 leaf nodes (visible elements that map to actual views), 
 - Single clear hierarchy, no ambiguity → high confidence → SKIP questions, go to Step 3
 - Gradient/complex shadow in design → MENTION in summary ("I see a gradient here, I'll approximate it as X")
 
-### Step 2.5: Project Scan (optional but recommended)
+### Step 2.5: Project Scan (optional, requires consent)
 
-If the target project is available locally, run a project scan:
+If the target project is available locally and you want to match Figma colors/strings/components to existing project resources, you may run a project scan.
+
+**⚠️ Before scanning, you MUST tell the user and get explicit consent:**
+> "I can scan your project directory to look up existing colors, strings, and components for more accurate code generation. This only reads resource files — it won't modify anything. Which project directory should I scan? (Or skip this step.)"
+
+Only proceed after the user provides the path. Do NOT scan without explicit consent.
 
 ```bash
 python scripts/project_scan.py /path/to/project --json --output scan-report.json
 ```
 
+**What the scan reads:** colors, strings, styles, drawables, images, and custom View classes. It does NOT modify any files.
+
 **How to use scan results in code generation**: Read `references/scan-usage.md`
+
+If the user declines or has no local project available, skip this step and hardcode all values directly in the generated code.
 
 ### Step 3: Generate Code
 
@@ -209,12 +219,11 @@ Periodically (or when asked), run `scripts/feedback_analyze.py` to identify patt
 
 ## Error Handling
 
-- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask the user whether they have a token or ask them to set environment variables. Instead:
-  1. Tell the user: "I need a Figma Personal Access Token to fetch the design. You can get one here: Figma → your avatar (top-left) → Settings → Security → Personal Access Tokens. Please paste it here (starts with `figd_`)."
-  2. Once they paste it, write it to the project root `.env` file silently: `echo 'FIGMA_TOKEN=figd_xxx' >> .env`
-  3. Tell the user: "Got it — I've saved it so you won't need to provide it again."
-  4. **Immediately retry the figma_fetch command and continue the task** — do NOT wait for the user to say anything else.
-- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Tell the user: "This token seems to be invalid or expired. Please generate a new one (same path: Figma → Settings → Security → Personal Access Tokens) and paste it here." Once provided, update `.env` and retry immediately.
+- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask the user to paste their token into chat. Instead:
+  1. Tell the user they need a Figma Personal Access Token (starts with `figd_`)
+  2. Tell them where to get it: Figma → avatar (top-left) → Settings → Security → Personal Access Tokens
+  3. Ask them to set `FIGMA_TOKEN` as a user environment variable (Windows: `setx FIGMA_TOKEN "figd_xxx"`, macOS/Linux: add `export FIGMA_TOKEN="figd_xxx"` to `~/.zshrc` or `~/.bashrc`), then restart their terminal and retry
+- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Ask the user to regenerate a new token (same path: Figma → Settings → Security → Personal Access Tokens) and set it locally, then retry.
 - **Invalid URL** → show valid URL example: `https://www.figma.com/design/<fileKey>/<name>?node-id=<id>`
 - **API error** → show error message, suggest checking network/proxy
 - **Node too large (>200 children)** → suggest selecting a smaller frame

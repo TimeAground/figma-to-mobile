@@ -4,7 +4,7 @@
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-orange.svg)](#supported-platforms)
 
-> Convert Figma designs to production-ready mobile UI code using AI — with full awareness of your existing project resources.
+> Convert Figma designs to production-ready mobile UI code using AI — with optional project resource inspection for accurate color/string matching.
 
 **Jetpack Compose** · **Android XML** · **SwiftUI** · **UIKit**
 
