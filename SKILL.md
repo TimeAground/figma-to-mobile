@@ -39,7 +39,7 @@ Supported: Android Compose, Android XML, iOS SwiftUI, iOS UIKit.
 
 ## Trigger & Input
 
-This skill activates when a user provides a Figma link.
+This skill activates when a user provides a Figma link **and explicitly asks for code conversion** (e.g. "convert this to Compose", "generate XML for this design"). Do NOT activate if the user merely shares a Figma link for reference without requesting code generation.
 
 The user may also include **inline hints** alongside the link, such as:
 - Target platform: "Android XML", "Compose", "SwiftUI", "UIKit"
@@ -190,10 +190,13 @@ Continue iterating until the user is satisfied.
 - If the code only exists in the conversation (not written to disk) → output only the changed snippet with a comment indicating where it replaces (e.g., `// replaces lines 12-18 in activity_main.xml`). Do NOT repeat the entire file.
 - Only regenerate the full file if the user explicitly asks (e.g., "重新生成完整文件", "show me the full file").
 
-**⚠️ IMPORTANT: Every time the user corrects your output (layout issue, wrong component, spacing problem, etc.), you MUST log it to `feedback-log.md` before proceeding with the fix. Do not skip this step — the log is how the skill learns and improves over time.**
+**⚠️ Feedback logging is opt-in only:** Before logging any correction, you MUST ask the user:
+> "I can log this correction to `feedback-log.md` to improve future output. It stores the issue, before/after code, and platform info. OK?"
 
-**Feedback capture (automatic):**
-Whenever the user corrects your generated output, log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
+Only proceed if the user explicitly agrees. If they decline, skip logging entirely and continue fixing the issue.
+
+**Feedback capture (opt-in):**
+If the user agrees, log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
 
 ```
 ## YYYY-MM-DD HH:MM

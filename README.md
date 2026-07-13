@@ -67,7 +67,7 @@ The AI agent will:
 3. Ask clarifying questions if needed
 4. Generate production-ready code files that reference your existing colors, strings, and components
 
-> **Figma Token** — Required on first use. If `FIGMA_TOKEN` is not set, the agent will prompt you to paste your token (Figma → Settings → Security → Personal Access Tokens) and save it to `.env` automatically.
+> **Figma Token** — Required on first use. Set `FIGMA_TOKEN` as a user environment variable (Windows: `setx FIGMA_TOKEN "figd_xxx"`, macOS/Linux: add `export FIGMA_TOKEN="***"` to `~/.zshrc` or `~/.bashrc`). Do NOT paste your token into chat or save it to a `.env` file. Get your token: Figma → Settings → Security → Personal Access Tokens.
 
 ## Supported Platforms
 
