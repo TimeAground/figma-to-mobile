@@ -6,7 +6,7 @@ description: >
   Use when a user provides a Figma link and wants mobile layout code.
   Extracts design tokens via Figma REST API, asks clarifying questions,
   then generates production-ready code files.
-  Optionally inspects local project resources for accurate color/string matching.
+  Bugs/feedback: https://github.com/TimeAground/figma-to-mobile/issues
 metadata:
   {
     "openclaw":
@@ -39,7 +39,7 @@ Supported: Android Compose, Android XML, iOS SwiftUI, iOS UIKit.
 
 ## Trigger & Input
 
-This skill activates when a user provides a Figma link **and explicitly asks for code conversion** (e.g. "convert this to Compose", "generate XML for this design"). Do NOT activate if the user merely shares a Figma link for reference without requesting code generation.
+This skill activates when a user provides a Figma link.
 
 The user may also include **inline hints** alongside the link, such as:
 - Target platform: "Android XML", "Compose", "SwiftUI", "UIKit"
@@ -137,24 +137,37 @@ If the design has ≤10 leaf nodes (visible elements that map to actual views), 
 - Single clear hierarchy, no ambiguity → high confidence → SKIP questions, go to Step 3
 - Gradient/complex shadow in design → MENTION in summary ("I see a gradient here, I'll approximate it as X")
 
-### Step 2.5: Project Scan (optional, requires consent)
+### Step 2.5: Project Scan — Ask First
 
-If the target project is available locally and you want to match Figma colors/strings/components to existing project resources, you may run a project scan.
+**⚠️ Always ask the user before scanning their project.** Scanning reads local files;
+the user should know and agree.
 
-**⚠️ Before scanning, you MUST tell the user and get explicit consent:**
-> "I can scan your project directory to look up existing colors, strings, and components for more accurate code generation. This only reads resource files — it won't modify anything. Which project directory should I scan? (Or skip this step.)"
+> "你的项目在 /path/to/project 对吗？要不要我先扫描一下项目里已有的资源
+>（颜色、文案、图片、自定义组件），这样生成代码时可以直接复用已有的东西？"
 
-Only proceed after the user provides the path. Do NOT scan without explicit consent.
+If the user agrees:
 
 ```bash
 python scripts/project_scan.py /path/to/project --json --output scan-report.json
 ```
 
-**What the scan reads:** colors, strings, styles, drawables, images, and custom View classes. It does NOT modify any files.
+Then read `scan-report.json` and `references/scan-usage.md`.
 
-**How to use scan results in code generation**: Read `references/scan-usage.md`
+If the user declines: proceed with hardcoded values per generation rules.
 
-If the user declines or has no local project available, skip this step and hardcode all values directly in the generated code.
+**How to present scan results:**
+
+Keep it brief and useful — not a JSON dump:
+
+> ✓ 扫描完成：找到 3 个模块、24 个颜色、18 条文案。
+> 其中有 6 个颜色映射到了主题色（primary、surface 等），生成代码时会用项目资源引用。
+
+**If scan found issues, tell the user naturally:**
+
+> 扫描完了，找到 N 个资源。不过 [具体问题，如某个模块没找到资源文件]，
+> 你项目里这部分是怎么组织的？
+
+**If no project path is known yet, don't scan.** Proceed with hardcoded generation.
 
 ### Step 3: Generate Code
 
@@ -190,13 +203,10 @@ Continue iterating until the user is satisfied.
 - If the code only exists in the conversation (not written to disk) → output only the changed snippet with a comment indicating where it replaces (e.g., `// replaces lines 12-18 in activity_main.xml`). Do NOT repeat the entire file.
 - Only regenerate the full file if the user explicitly asks (e.g., "重新生成完整文件", "show me the full file").
 
-**⚠️ Feedback logging is opt-in only:** Before logging any correction, you MUST ask the user:
-> "I can log this correction to `feedback-log.md` to improve future output. It stores the issue, before/after code, and platform info. OK?"
+**⚠️ IMPORTANT: Every time the user corrects your output (layout issue, wrong component, spacing problem, etc.), you MUST log it to `feedback-log.md` before proceeding with the fix. Do not skip this step — the log is how the skill learns and improves over time.**
 
-Only proceed if the user explicitly agrees. If they decline, skip logging entirely and continue fixing the issue.
-
-**Feedback capture (opt-in):**
-If the user agrees, log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
+**Feedback capture (automatic):**
+Whenever the user corrects your generated output, log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
 
 ```
 ## YYYY-MM-DD HH:MM
@@ -222,11 +232,13 @@ Periodically (or when asked), run `scripts/feedback_analyze.py` to identify patt
 
 ## Error Handling
 
-- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask the user to paste their token into chat. Instead:
-  1. Tell the user they need a Figma Personal Access Token (starts with `figd_`)
+- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask user to run commands. Instead:
+  1. Tell the user you need a Figma Personal Access Token
   2. Tell them where to get it: Figma → avatar (top-left) → Settings → Security → Personal Access Tokens
-  3. Ask them to set `FIGMA_TOKEN` as a user environment variable (Windows: `setx FIGMA_TOKEN "figd_xxx"`, macOS/Linux: add `export FIGMA_TOKEN="figd_xxx"` to `~/.zshrc` or `~/.bashrc`), then restart their terminal and retry
-- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Ask the user to regenerate a new token (same path: Figma → Settings → Security → Personal Access Tokens) and set it locally, then retry.
+  3. Ask them to paste the token in chat
+  4. Once they provide it (starts with `figd_`), write it to the project root `.env` file: `echo 'FIGMA_TOKEN=figd_xxx' >> .env`
+  5. Retry the figma_fetch command — it will read from `.env` automatically
+- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Ask user to regenerate and paste new token. Update `.env` file.
 - **Invalid URL** → show valid URL example: `https://www.figma.com/design/<fileKey>/<name>?node-id=<id>`
 - **API error** → show error message, suggest checking network/proxy
 - **Node too large (>200 children)** → suggest selecting a smaller frame

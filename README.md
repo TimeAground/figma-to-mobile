@@ -1,120 +1,110 @@
 # figma-to-mobile
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-green.svg)](https://python.org)
-[![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-orange.svg)](#supported-platforms)
+Convert Figma designs to production-ready mobile UI code using AI.
 
-> Convert Figma designs to production-ready mobile UI code using AI — with optional project resource inspection for accurate color/string matching.
+Supports: **Jetpack Compose** · **Android XML** · **SwiftUI** · **UIKit**
 
-**Jetpack Compose** · **Android XML** · **SwiftUI** · **UIKit**
+## Demo
 
-## ✨ What It Does
-
-Paste a Figma design link → get idiomatic mobile UI code that reuses your project's existing colors, strings, drawables, and components. Not pixel-positioned boxes — real layouts using `LazyColumn`, `Row`, `VStack`, `UITableView`, etc.
+Here's a side-by-side comparison using a [Material Design 3 Messaging App](https://www.figma.com/community/file/1169726503071187057/) from Figma Community:
 
 ![Figma to Compose comparison](assets/demo-comparison.png)
-*Left: Figma design · Right: Generated Jetpack Compose code running in Android Studio*
 
-## 🧠 How It Works
+**Left:** Figma design · **Right:** Generated Jetpack Compose code running in Android Studio
 
-1. **Fetch** — Python script calls Figma REST API to extract the full node tree (auto-layout, style refs, component variants). Supports multi-node comparison for multi-state components (default/hover/disabled).
-2. **Scan** — Scans your existing project to build a resource index: colors, strings, drawables, custom Views, Composables, and Gradle dependencies.
-3. **Interpret** — AI analyzes layout semantics: "6 similar rows → `LazyColumn`", "horizontal stack with spacing → `Row`"
-4. **Generate** — Outputs platform-idiomatic code that **reuses existing resources** (matches Figma color values to your `colors.xml` / `Color.kt` entries; matches images to your drawable names) instead of hardcoding hex values.
-5. **Iterate** — Refine through natural language: *"make the header sticky"*, *"switch to dark theme"*
-6. **Learn** — Feedback is logged and analyzed by `feedback_analyze.py`, which surfaces rule improvement candidates that get merged back into `references/`.
+The tool reads the Figma design tree (auto-layout, style refs, variants) and generates idiomatic code — not pixel-positioned boxes.
 
-## 🔑 Key Differentiators
+## How It Works
 
-| | Screenshot-based tools | Other Figma plugins | figma-to-mobile |
-|---|---|---|---|
-| **Input** | Screenshot / image | Figma API (design tree) | Figma API (design tree) |
-| **Layout** | Pixel positions | Auto-layout semantics | Auto-layout semantics |
-| **Project awareness** | ❌ | ❌ | ✅ Scans existing resources |
-| **Color matching** | Hardcoded hex | Hardcoded hex | Matches your `colors.xml` / `Color.kt` |
-| **Component reuse** | ❌ | ❌ | ✅ Detects your custom Views |
-| **Feedback loop** | ❌ | ❌ | ✅ Logs errors → improves rules |
-| **Multi-state support** | ❌ | Limited | ✅ Compares multiple nodes at once |
-| **Cost** | Paid subscription | Varies | Free & open source |
+1. **Fetch** — Python script calls Figma API to extract the node tree
+2. **Interpret** — AI analyzes layout semantics: "6 similar rows → `LazyColumn`", "horizontal stack → `Row`"
+3. **Generate** — Outputs platform-idiomatic code with proper theming (Material3, SF Symbols, etc.)
+4. **Iterate** — Refine through natural language: "make the header sticky", "switch to dark theme"
 
-## 🚀 Quick Start
+## Install
 
-### 1. Install
-
-Works with any AI coding assistant that supports agent skills:
+### OpenClaw
 
 ```bash
-# OpenClaw
 clawhub install figma-to-mobile
-
-# Claude Code — copy to your project
-cp -r figma-to-mobile/ your-project/.claude/skills/
-
-# GitHub Copilot — copy to your project
-cp -r figma-to-mobile/ your-project/.agents/skills/
 ```
 
-### 2. Use
+### Claude Code
 
+Copy the `figma-to-mobile` folder into your project:
 ```
-Convert this to Jetpack Compose:
-https://www.figma.com/design/xxx/Project?node-id=100-200
+your-project/.claude/skills/figma-to-mobile/
 ```
 
-The AI agent will:
-1. Fetch the Figma design tree
-2. Scan your project's existing resources
-3. Ask clarifying questions if needed
-4. Generate production-ready code files that reference your existing colors, strings, and components
+### GitHub Copilot
 
-> **Figma Token** — Required on first use. Set `FIGMA_TOKEN` as a user environment variable (Windows: `setx FIGMA_TOKEN "figd_xxx"`, macOS/Linux: add `export FIGMA_TOKEN="***"` to `~/.zshrc` or `~/.bashrc`). Do NOT paste your token into chat or save it to a `.env` file. Get your token: Figma → Settings → Security → Personal Access Tokens.
+Copy the `figma-to-mobile` folder into your project:
+```
+your-project/.agents/skills/figma-to-mobile/
+```
 
-## Supported Platforms
+## Setup
 
-| Platform | Framework | Key Features |
-|---|---|---|
-| **Android** | Jetpack Compose | Material3, LazyColumn/Row, Navigation, ViewModel-ready |
-| **Android** | XML | ConstraintLayout, RecyclerView, DataBinding-ready |
-| **iOS** | SwiftUI | SF Symbols, NavigationStack, @Observable |
-| **iOS** | UIKit | Auto Layout, UICollectionView, programmatic UI |
+1. Get a Figma Personal Access Token:
+   - Figma → Avatar → Settings → Security → Personal Access Tokens
+   - Generate a new token (starts with `figd_`)
 
-## 🏗 Architecture
+2. Set the environment variable:
+   ```bash
+   # macOS/Linux
+   export FIGMA_TOKEN="figd_your_token_here"
+
+   # Windows PowerShell
+   $env:FIGMA_TOKEN = "figd_your_token_here"
+   ```
+
+## Usage
+
+Paste a Figma design link in your AI assistant's chat:
+
+> Convert this to Jetpack Compose: https://www.figma.com/design/xxx/Project?node-id=100-200
+
+The agent will:
+1. Fetch the design data from Figma API
+2. Ask clarifying questions (platform, list vs static, etc.)
+3. Generate production-ready code files
+4. Iterate based on your feedback — only patches the changed lines, never regenerates the full file unless you ask
+
+## What Makes It Different
+
+| Feature | Screenshot-based tools | figma-to-mobile |
+|---------|----------------------|-----------------|
+| Input | Screenshot/image | Figma API (design tree) |
+| Layout understanding | Pixel positions | Auto-layout semantics |
+| Output quality | Absolute positioning | Idiomatic code (LazyColumn, VStack, etc.) |
+| Iteration | Re-screenshot | Natural language refinement |
+| Cost | Paid subscription | Free & open source |
+
+## What's in the Box
 
 ```
 figma-to-mobile/
-├── SKILL.md                      # AI agent instructions
+├── SKILL.md              # Agent instructions (the brain)
 ├── scripts/
-│   ├── figma_fetch.py            # Figma API fetcher (single node / multi-node compare / SVG export)
-│   ├── project_scan.py           # Multi-platform project scanner entry point
-│   ├── feedback_analyze.py       # Parses feedback-log.md → generates rule improvement candidates
-│   └── scanners/
-│       ├── android_scanner.py    # Android platform detector + scanner
-│       ├── android_resources.py  # colors.xml / strings.xml / dimens.xml / styles.xml
-│       ├── android_drawables.py  # Shape drawable attribute extraction
-│       ├── android_layouts.py    # Layout XML analysis, View usage stats
-│       ├── android_views.py      # Custom View subclass scanner (Kotlin/Java)
-│       ├── android_deps.py       # Gradle dependency graph builder
-│       ├── ios_scanner.py        # iOS platform scanner
-│       ├── ios_resources.py      # colorset / .strings / NSLocalizedString
-│       ├── ios_assets.py         # xcassets / imageset scanner
-│       └── ios_views.py          # UIKit / SwiftUI View definition scanner
+│   └── figma_fetch.py    # Figma API data fetcher
 ├── references/
-│   ├── figma-interpretation.md   # Which nodes to skip, Container+Icon merge rules, multi-state detection
-│   ├── generation-rules.md       # Resource match priority, drawable generation conditions, naming rules
-│   ├── scan-usage.md             # How to use scan results (color / string / image matching)
-│   ├── compose-patterns.md       # Figma node → Jetpack Compose mapping rules
-│   ├── xml-patterns.md           # Figma node → Android XML mapping rules
-│   ├── swiftui-patterns.md       # Figma node → SwiftUI mapping rules
-│   └── uikit-patterns.md         # Figma node → UIKit mapping rules
-└── tests/
-    └── test_project_scan.py      # Scanner integration tests
+│   ├── compose-patterns.md   # Jetpack Compose mapping rules
+│   ├── xml-patterns.md       # Android XML mapping rules
+│   ├── swiftui-patterns.md   # SwiftUI mapping rules
+│   └── uikit-patterns.md     # UIKit mapping rules
+└── assets/
+    └── demo-comparison.png   # Demo comparison image
 ```
 
 ## Requirements
 
-- Python 3.8+ with `requests`
+- Python 3.8+ with `requests` package
 - Figma Personal Access Token (free)
-- An AI coding assistant (OpenClaw, Claude Code, GitHub Copilot, etc.)
+
+## Feedback & Issues
+
+Found a bug or have a suggestion?
+[Open an issue on GitHub](https://github.com/TimeAground/figma-to-mobile/issues)
 
 ## License
 
