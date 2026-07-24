@@ -94,7 +94,19 @@ https://www.figma.com/design/xxx/Project?node-id=100-200
 
 AI Agent 会依次：拉取设计树 → 扫描项目资源 → 必要时提问 → 生成引用已有资源的完整代码文件。
 
-> **Figma Token** — 首次使用时需要。如果未设置 `FIGMA_TOKEN`，Agent 会引导你粘贴 Token（Figma → 设置 → 安全 → 个人访问令牌），并自动写入项目根目录的 `.env` 文件，无需手动配置。
+> ⚠️ **Figma Token** — 需要设置环境变量 `FIGMA_TOKEN`。请在 Figma → 设置 → 安全 → 个人访问令牌 生成 Token，然后在系统环境变量中配置。
+>
+> **不要在聊天中粘贴 Token** — 聊天记录可能会被记录。请通过环境变量设置：
+>
+> ```bash
+> # macOS/Linux
+> export FIGMA_TOKEN="figd_your_token_here"
+>
+> # Windows PowerShell
+> $env:FIGMA_TOKEN = "figd_your_token_here"
+> ```
+>
+> ⚠️ 请确保 `.env` 文件和 Token 不会误提交到版本控制。已配置 `.gitignore` 包含 `.env` 的仓库可以放心使用。
 
 ---
 

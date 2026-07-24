@@ -1,11 +1,12 @@
 ---
 name: figma-to-mobile
 description: >
-  Convert Figma designs to mobile UI code.
-  Supports Android (Jetpack Compose, XML) and iOS (SwiftUI, UIKit).
+  Convert Figma designs to mobile UI code with project-aware scanning.
+  Supports Android (Jetpack Compose, XML), iOS (SwiftUI, UIKit), and Flutter.
   Use when a user provides a Figma link and wants mobile layout code.
-  Extracts design tokens via Figma REST API, asks clarifying questions,
-  then generates production-ready code files.
+  Extracts design tokens via Figma REST API, scans local project resources
+  for reuse, supports multi-frame comparison and SVG export, and captures
+  manual corrections via feedback-log for continuous improvement.
   Bugs/feedback: https://github.com/TimeAground/figma-to-mobile/issues
 metadata:
   {
@@ -13,6 +14,18 @@ metadata:
       {
         "requires": { "bins": ["python3"], "env": ["FIGMA_TOKEN"] },
         "primaryEnv": "FIGMA_TOKEN",
+        "permissions":
+          {
+            "network": [ "api.figma.com" ],
+            "fs":
+              {
+                "read": [ "project root — for resource scanning (colors, strings, components)" ],
+                "write": [
+                  "project root — for generated UI code files",
+                  "project root — for feedback-log.md (user consent required)"
+                ]
+              }
+          },
         "install":
           [
             {
