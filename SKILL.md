@@ -35,6 +35,8 @@ Supported: Android Compose, Android XML, iOS SwiftUI, iOS UIKit.
 ## Prerequisites
 
 - `FIGMA_TOKEN` environment variable set (Figma > Settings > Personal Access Tokens)
+  ⚠️ **Your Figma token is sensitive** — treat it like a password. Never paste it into chat
+    messages (they may be logged). Set it via your shell rc file or OpenClaw env config.
 - Python 3.8+ with `requests` package
 
 ## Trigger & Input
@@ -203,10 +205,15 @@ Continue iterating until the user is satisfied.
 - If the code only exists in the conversation (not written to disk) → output only the changed snippet with a comment indicating where it replaces (e.g., `// replaces lines 12-18 in activity_main.xml`). Do NOT repeat the entire file.
 - Only regenerate the full file if the user explicitly asks (e.g., "重新生成完整文件", "show me the full file").
 
-**⚠️ IMPORTANT: Every time the user corrects your output (layout issue, wrong component, spacing problem, etc.), you MUST log it to `feedback-log.md` before proceeding with the fix. Do not skip this step — the log is how the skill learns and improves over time.**
+**⚠️ Before logging any feedback, tell the user:**
+  > "I'll save this correction locally to `feedback-log.md` to improve future output.
+  > It stores before/after snippets — is that OK?"
+  Only proceed if the user agrees.
 
-**Feedback capture (automatic):**
-Whenever the user corrects your generated output, log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
+**⚠️ IMPORTANT: Every time the user corrects your output (layout issue, wrong component, spacing problem, etc.), you MUST log it to `feedback-log.md` before proceeding with the fix (after user consent). Do not skip this step — the log is how the skill learns and improves over time.**
+
+**Feedback capture:**
+Whenever the user corrects your generated output (with consent), log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
 
 ```
 ## YYYY-MM-DD HH:MM
@@ -232,13 +239,17 @@ Periodically (or when asked), run `scripts/feedback_analyze.py` to identify patt
 
 ## Error Handling
 
-- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`) → do NOT ask user to run commands. Instead:
-  1. Tell the user you need a Figma Personal Access Token
-  2. Tell them where to get it: Figma → avatar (top-left) → Settings → Security → Personal Access Tokens
-  3. Ask them to paste the token in chat
-  4. Once they provide it (starts with `figd_`), write it to the project root `.env` file: `echo 'FIGMA_TOKEN=figd_xxx' >> .env`
-  5. Retry the figma_fetch command — it will read from `.env` automatically
-- **FIGMA_TOKEN invalid** (API returns 403/401) → token may have expired or been revoked. Ask user to regenerate and paste new token. Update `.env` file.
+- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`):
+  Tell the user:
+  > I need a Figma Personal Access Token to fetch the design.
+  > ⚠️ **Do not paste it into this chat** — chat messages may be logged.
+  > Set it as an environment variable and restart.
+  > Get one at: Figma → avatar → Settings → Security → Personal Access Tokens
+  >
+  >   Windows: `setx FIGMA_TOKEN "figd_xxx"`
+  >   macOS/Linux: add `export FIGMA_TOKEN="figd_xxx"` to ~/.zshrc
+- **FIGMA_TOKEN invalid** (API returns 403/401) → tell user the token may have expired or been revoked.
+  Direct them to regenerate from Figma Settings → Security → Personal Access Tokens.
 - **Invalid URL** → show valid URL example: `https://www.figma.com/design/<fileKey>/<name>?node-id=<id>`
 - **API error** → show error message, suggest checking network/proxy
 - **Node too large (>200 children)** → suggest selecting a smaller frame
