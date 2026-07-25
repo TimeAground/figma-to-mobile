@@ -45,18 +45,19 @@ your-project/.agents/skills/figma-to-mobile/
 
 ## Setup
 
-1. Get a Figma Personal Access Token:
-   - Figma → Avatar → Settings → Security → Personal Access Tokens
-   - Generate a new token (starts with `figd_`)
-
-2. Set the environment variable:
-   ```bash
-   # macOS/Linux
-   export FIGMA_TOKEN="figd_your_token_here"
-
-   # Windows PowerShell
-   $env:FIGMA_TOKEN = "figd_your_token_here"
-   ```
+> ⚠️ **Figma Token** — Set the `FIGMA_TOKEN` environment variable.
+> Generate one at Figma → Avatar → Settings → Security → Personal Access Tokens.
+>
+> **Do not paste your token into chat** — chat messages may be logged.
+> Set it via your shell profile or system environment variables:
+>
+> ```bash
+> # macOS/Linux
+> export FIGMA_TOKEN="figd_your_token_here"
+>
+> # Windows PowerShell
+> $env:FIGMA_TOKEN = "figd_your_token_here"
+> ```
 
 ## Usage
 
