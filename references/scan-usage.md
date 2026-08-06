@@ -99,3 +99,15 @@ validate against the Figma design before making assumptions.
 
 If no scan report is available, fall back to the hardcoded resource matching
 described in Step 3.
+
+## Presenting Scan Results
+
+Keep it brief and useful — not a JSON dump:
+
+> ✓ 扫描完成：找到 3 个模块、24 个颜色、18 条文案。
+> 其中有 6 个颜色映射到了主题色（primary、surface 等），生成代码时会用项目资源引用。
+
+If scan found issues, tell the user naturally:
+
+> 扫描完了，找到 N 个资源。不过 [具体问题，如某个模块没找到资源文件]，
+> 你项目里这部分是怎么组织的？

@@ -1,13 +1,12 @@
 ---
 name: figma-to-mobile
-description: >
-  Convert Figma designs to mobile UI code with project-aware scanning.
-  Supports Android (Jetpack Compose, XML), iOS (SwiftUI, UIKit), and Flutter.
-  Use when a user provides a Figma link and asks for mobile layout code.
-  Extracts design tokens via Figma REST API (from api.figma.com), scans
-  local project resources for reuse, supports multi-frame comparison,
-  and captures manual corrections via feedback-log for improvement.
-  Bugs/feedback: https://github.com/TimeAground/figma-to-mobile/issues
+version: 1.2.0
+requires: [Bash, Read, Write, Grep, Glob]
+description: >-
+  Convert Figma designs to mobile UI code (Compose/XML/SwiftUI/UIKit/Flutter)
+  via the Figma REST API with local resource scanning, multi-frame comparison,
+  and feedback-log corrections. Activate when a user provides a Figma link and
+  asks for mobile layout code.
 metadata:
   {
     "openclaw":
@@ -35,6 +34,13 @@ metadata:
               "label": "Install Python requests package",
             },
           ],
+      },
+    "resourceManifest":
+      {
+        "cpu": "low — short-lived CLI scripts",
+        "memory": "low (< 512 MB)",
+        "timeout": "30s per API request; 3 retries; ~2s min interval between requests",
+        "network": [ "api.figma.com" ],
       },
   }
 ---
@@ -65,6 +71,23 @@ The user may also include **inline hints** alongside the link, such as:
 **If the user provides hints, respect them and skip the corresponding questions.**
 For example, if the user says "Android XML, the 3 cards are a RecyclerView list", do NOT ask about output format or whether the cards are dynamic/static.
 
+## Not Applicable
+
+This skill is NOT for:
+
+- **Screenshot / image → code**: it works only with Figma design links via the Figma REST API, not with screenshots or image files.
+- **Layout code without a Figma link**: generic "write me a login screen" requests have no design to interpret.
+- **Casual mentions or pasted URLs without a conversion request** — see Trigger & Input above.
+- **Pure design discussion or Figma feature questions**: no code is generated.
+
+## Deliverables
+
+After a successful conversion, the user receives:
+
+- **Generated UI code files** — platform-idiomatic (Compose / XML / SwiftUI / UIKit / Flutter). Multiple files are presented with a clear filename header (see Step 3).
+- **`scan-report.json`** — project resource scan results, only when the user agrees to a project scan (Step 2.5).
+- **`feedback-log.md`** — correction log written to the project root, only with user consent (Step 4).
+
 ## Workflow
 
 ### Step 1: Fetch & Analyze
@@ -79,25 +102,18 @@ When user provides Figma link(s):
    > If you want to convert multiple frames, send multiple links.
 
    **B. Single frame link** (has specific `node-id`):
-   Run `scripts/figma_fetch.py "<url>"` → returns that frame's design data.
-   Proceed to analysis.
+   ```bash
+   python scripts/figma_fetch.py "https://www.figma.com/design/<fileKey>/<name>?node-id=<id>"
+   ```
+   → returns that frame's design data. Proceed to analysis.
 
    **C. Multiple links** (user sends 2+ URLs):
-   First, determine the relationship by examining frame names and user context:
+   Determine the relationship by frame names and user context: same-page
+   states → `--compare` mode (multi-state code); parent+overlay → independent
+   layout files; independent pages → fetch one at a time, ask which to convert
+   first. If unsure, ask the user.
 
-   - **Same page, different visual states** (e.g. "首页-有banner" and "首页-无banner"): Use `--compare` mode to fetch all and get a diff summary. Generate multi-state code (conditional visibility, state switching).
-
-   - **Parent page + overlay/drawer** (e.g. "首页" + "首页-抽屉-xxx"): Generate each as an **independent layout file**. Then tell the user the relationship:
-     > Frame 1 ("首页") and Frame 2 ("首页-抽屉") look like a main page + side drawer.
-     > I've generated two separate layout files. How you wire them together (DrawerLayout, Navigation, etc.) depends on your project architecture.
-
-     The Skill's job is generating UI layout code, not deciding architecture (Activity vs Fragment vs Navigation).
-
-   - **Different independent pages** (e.g. "首页" + "设置页" + "个人中心"): Process each independently. Fetch them **one at a time** with a pause between requests to avoid rate limiting. Present a summary of all pages, then ask which to convert first (or convert all sequentially).
-
-   - **Not sure**: Ask the user — "These frames look related but I'm not sure how. Are they different states of the same page, a page with an overlay, or independent pages?"
-
-   **Rate limit protection for multiple links**: When fetching multiple nodes, wait 2-3 seconds between requests. Never fire more than 2 requests in parallel.
+   **Detailed multi-frame rules**: Read `references/multi-frame.md`
 
 2. **If the link has no specific node-id**, ask the user to re-copy from the specific frame (see A above). Do NOT call the API.
 
@@ -170,17 +186,7 @@ Then read `scan-report.json` and `references/scan-usage.md`.
 
 If the user declines: proceed with hardcoded values per generation rules.
 
-**How to present scan results:**
-
-Keep it brief and useful — not a JSON dump:
-
-> ✓ 扫描完成：找到 3 个模块、24 个颜色、18 条文案。
-> 其中有 6 个颜色映射到了主题色（primary、surface 等），生成代码时会用项目资源引用。
-
-**If scan found issues, tell the user naturally:**
-
-> 扫描完了，找到 N 个资源。不过 [具体问题，如某个模块没找到资源文件]，
-> 你项目里这部分是怎么组织的？
+**How to present scan results** (with sample phrasing): Read `references/scan-usage.md`
 
 **If no project path is known yet, don't scan.** Proceed with hardcoded generation.
 
@@ -225,45 +231,41 @@ Continue iterating until the user is satisfied.
 
 **⚠️ IMPORTANT: Every time the user corrects your output (layout issue, wrong component, spacing problem, etc.), you MUST log it to `feedback-log.md` before proceeding with the fix (after user consent). Do not skip this step — the log is how the skill learns and improves over time.**
 
-**Feedback capture:**
-Whenever the user corrects your generated output (with consent), log the correction to `feedback-log.md` in the project root (create if it doesn't exist). Each entry follows this format:
+**Feedback format, logging rules, and analysis**: Read `references/feedback-log.md`
 
+## API Request Limits
+
+The bundled `scripts/figma_fetch.py` enforces these limits automatically:
+
+- **Timeout**: 30s per request
+- **Retries**: up to 3 attempts on connection/SSL errors (backoff 5s/10s/15s)
+- **Rate limit**: ≥2s between requests; on HTTP 429, wait per `Retry-After` header (cap 30s)
+- **Adaptive depth**: refetches with deeper depth (up to 15) when children look truncated
+
+When a rate limit is exceeded, the script reports:
+
+```json
+{
+  "status": "error",
+  "error": "RATE_LIMIT_EXCEEDED",
+  "message": "Figma API rate limit exceeded",
+  "retry_after_seconds": 30,
+  "plan_tier": "FREE",
+  "limit_type": "requests_per_minute"
+}
 ```
-## YYYY-MM-DD HH:MM
-- **Platform**: Android XML / Compose / SwiftUI / UIKit
-- **Figma node type**: (e.g., FRAME with icon, Tab bar, Button group)
-- **Issue**: Brief description of what was wrong
-- **Before**: What the agent generated (snippet or description)
-- **After**: What the user wanted (snippet or description)
-- **Rule candidate**: (optional) If this correction suggests a general pattern rule, note it here
-```
-
-Log entries should be:
-- **Concise** — only the relevant diff, not entire files
-- **Categorized** — always include platform and Figma node type for later analysis
-- **Actionable** — focus on the mapping error, not cosmetic preferences (e.g., "user prefers 16dp" is not a rule; "VECTOR compositions should be single ImageView" is)
-
-Do NOT log:
-- One-off personal preferences (specific color choices, naming conventions)
-- Corrections to non-mapping issues (typos, import statements)
-- Feedback the user explicitly says is project-specific, not general
-
-Periodically (or when asked), run `scripts/feedback_analyze.py` to identify patterns and generate rule candidates.
 
 ## Error Handling
 
-- **FIGMA_TOKEN not set** (script outputs `FIGMA_TOKEN_NOT_SET`):
-  Tell the user:
-  > I need a Figma Personal Access Token to fetch the design.
-  > ⚠️ **Do not paste it into this chat** — chat messages may be logged.
-  > Set it as an environment variable and restart.
-  > Get one at: Figma → avatar → Settings → Security → Personal Access Tokens
-  >
-  >   Windows: `setx FIGMA_TOKEN "figd_xxx"`
-  >   macOS/Linux: add `export FIGMA_TOKEN="figd_xxx"` to ~/.zshrc
-- **FIGMA_TOKEN invalid** (API returns 403/401) → tell user the token may have expired or been revoked.
-  Direct them to regenerate from Figma Settings → Security → Personal Access Tokens.
-- **Invalid URL** → show valid URL example: `https://www.figma.com/design/<fileKey>/<name>?node-id=<id>`
-- **API error** → show error message, suggest checking network/proxy
-- **Node too large (>200 children)** → suggest selecting a smaller frame
-- **Depth auto-increased** → the script auto-retries with deeper depth if it detects truncated children. Inform user if this happens ("I needed to fetch deeper to get all details").
+Quick reference — full details in `references/error-handling.md`:
+
+- **FIGMA_TOKEN not set** (`FIGMA_TOKEN_NOT_SET`) → guide user to set env var; never paste token into chat
+- **403/401** → token expired/revoked; regenerate in Figma Settings → Security
+- **Invalid URL** → show valid format: `https://www.figma.com/design/<fileKey>/<name>?node-id=<id>`
+- **API error / node too large / depth auto-increased** → see `references/error-handling.md`
+
+## Tips
+
+- **Token safety**: never paste `FIGMA_TOKEN` into chat — set it as an environment variable (see Prerequisites).
+- **Rate limits**: keep ≥2s between Figma API calls; the script enforces this, so avoid parallel fetches to save time.
+- **Multi-frame**: compare shared components across frames before generating code to avoid duplication.
