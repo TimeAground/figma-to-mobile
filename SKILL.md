@@ -1,6 +1,6 @@
 ---
 name: figma-to-mobile
-version: 1.2.0
+version: 2.3.0
 requires: [Bash, Read, Write, Grep, Glob]
 description: >-
   Convert Figma designs to mobile UI code (Compose/XML/SwiftUI/UIKit/Flutter)

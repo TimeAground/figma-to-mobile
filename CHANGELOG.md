@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.3.0] - 2026-08-06
+
+- Release to ClawHub (owner: timeaground, slug: figma-to-mobile)
+- Version aligned with ClawHub release versioning
+
 ## [1.2.0] - 2026-08-06
 
 - Slim SKILL.md via reference-loading protocol (AP-001): low-frequency details moved to `references/`
